@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/nguyenthienan91/bookmark-manager/internal/model"
 	"github.com/nguyenthienan91/bookmark-manager/internal/service"
 )
 
@@ -21,11 +24,19 @@ func NewGenPass(GenPassSvc service.GenPass) GenPass {
 	}
 }
 
+// GeneratePassword godoc
+// @Summary      Generate a random password
+// @Description  Generate a secure random password with 12 characters
+// @Tags         Password
+// @Produce      json
+// @Success      200  {object}  model.GeneratePasswordResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /generate-password [get]
 func (g *genPassHandler) GeneratePassword(c *gin.Context) {
 	pass, err := g.genPassService.GeneratePassword(passwordLength)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to generate password"})
+		c.JSON(http.StatusInternalServerError, model.ErrorResponse{Error: "Failed to generate password"})
 		return
 	}
-	c.JSON(200, gin.H{"password": pass})
+	c.JSON(http.StatusOK, model.GeneratePasswordResponse{Password: pass})
 }

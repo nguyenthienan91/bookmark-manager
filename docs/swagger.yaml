@@ -1,0 +1,104 @@
+basePath: /
+definitions:
+  model.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  model.GeneratePasswordResponse:
+    properties:
+      password:
+        type: string
+    type: object
+  model.HealthCheckResponse:
+    properties:
+      instance_id:
+        type: string
+      message:
+        type: string
+      service_name:
+        type: string
+    type: object
+  model.ShortenLinkRequest:
+    properties:
+      exp:
+        type: integer
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  model.ShortenLinkResponse:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API for Bookmark Manager application.
+  title: Bookmark Manager API
+  version: 1.0.0
+paths:
+  /generate-password:
+    get:
+      description: Generate a secure random password with 12 characters
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.GeneratePasswordResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Generate a random password
+      tags:
+      - Password
+  /health-check:
+    get:
+      description: Check if the service is running and return service information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.HealthCheckResponse'
+      summary: Health check endpoint
+      tags:
+      - Health
+  /v1/links/shorten:
+    post:
+      consumes:
+      - application/json
+      description: Generate a 7-character alphanumeric short code for the given URL
+      parameters:
+      - description: Shorten Link Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.ShortenLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ShortenLinkResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Shorten a URL
+      tags:
+      - Links
+swagger: "2.0"
