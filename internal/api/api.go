@@ -7,6 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nguyenthienan91/bookmark-manager/internal/handler"
 	"github.com/nguyenthienan91/bookmark-manager/internal/service"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	
+	_ "github.com/nguyenthienan91/bookmark-manager/docs"
 )
 
 type Engine interface {
@@ -50,5 +54,8 @@ func (e *engine) initRoutes() {
 
 	e.app.GET("/generate-password", genPassHandler.GeneratePassword)
 	e.app.GET("/health-check", healthCheckHandler.HealthCheck)
+	
+	// Swagger documentation endpoint
+	e.app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 

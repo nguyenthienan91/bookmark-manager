@@ -1,0 +1,90 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for Bookmark Manager application.",
+        "title": "Bookmark Manager API",
+        "contact": {},
+        "version": "1.0.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/generate-password": {
+            "get": {
+                "description": "Generate a secure random password with 12 characters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Password"
+                ],
+                "summary": "Generate a random password",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.GeneratePasswordResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health-check": {
+            "get": {
+                "description": "Check if the service is running and return service information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health check endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.HealthCheckResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.GeneratePasswordResponse": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.HealthCheckResponse": {
+            "type": "object",
+            "properties": {
+                "instance_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "service_name": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

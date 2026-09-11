@@ -1,0 +1,58 @@
+basePath: /
+definitions:
+  model.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  model.GeneratePasswordResponse:
+    properties:
+      password:
+        type: string
+    type: object
+  model.HealthCheckResponse:
+    properties:
+      instance_id:
+        type: string
+      message:
+        type: string
+      service_name:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API for Bookmark Manager application.
+  title: Bookmark Manager API
+  version: 1.0.0
+paths:
+  /generate-password:
+    get:
+      description: Generate a secure random password with 12 characters
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.GeneratePasswordResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Generate a random password
+      tags:
+      - Password
+  /health-check:
+    get:
+      description: Check if the service is running and return service information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.HealthCheckResponse'
+      summary: Health check endpoint
+      tags:
+      - Health
+swagger: "2.0"
