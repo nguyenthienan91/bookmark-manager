@@ -19,6 +19,22 @@ definitions:
       service_name:
         type: string
     type: object
+  model.ShortenLinkRequest:
+    properties:
+      exp:
+        type: integer
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  model.ShortenLinkResponse:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
 info:
   contact: {}
   description: API for Bookmark Manager application.
@@ -55,4 +71,34 @@ paths:
       summary: Health check endpoint
       tags:
       - Health
+  /v1/links/shorten:
+    post:
+      consumes:
+      - application/json
+      description: Generate a 7-character alphanumeric short code for the given URL
+      parameters:
+      - description: Shorten Link Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.ShortenLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ShortenLinkResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Shorten a URL
+      tags:
+      - Links
 swagger: "2.0"

@@ -2,6 +2,9 @@ package service
 
 import "github.com/nguyenthienan91/bookmark-manager/internal/model"
 
+// HealthCheck is the interface for health-check logic.
+//
+//go:generate mockery --name HealthCheck --filename=health_check.go
 type HealthCheck interface {
 	Check() model.HealthCheckResponse
 }
