@@ -60,7 +60,7 @@ paths:
       - Password
   /health-check:
     get:
-      description: Check if the service is running and return service information
+      description: Check if the service is running and Redis is reachable
       produces:
       - application/json
       responses:
@@ -68,6 +68,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/model.HealthCheckResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
       summary: Health check endpoint
       tags:
       - Health

@@ -48,12 +48,14 @@ func main() {
 
 	// 5. Create repository
 	linkRepo := repository.NewLinkRepository(redisClient)
+	healthRepo := repository.NewHealthCheckRepository(redisClient)
 
 	// 6. Create shorten service
 	shortenSvc := service.NewShortenLink(linkRepo)
+	healthCheckSvc := service.NewHealthCheck(cfg.ServiceName, cfg.InstanceID, healthRepo)
 
 	// 7. Start HTTP server
-	app := api.NewEngine(cfg, shortenSvc)
+	app := api.NewEngine(cfg, healthCheckSvc, shortenSvc)
 	if err := app.Start(); err != nil {
 		panic(err)
 	}

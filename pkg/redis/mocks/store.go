@@ -17,6 +17,26 @@ type Store struct {
 	mock.Mock
 }
 
+// Ping provides a mock function with given fields: ctx
+func (_m *Store) Ping(ctx context.Context) *redis.StatusCmd {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Ping")
+	}
+
+	var r0 *redis.StatusCmd
+	if rf, ok := ret.Get(0).(func(context.Context) *redis.StatusCmd); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*redis.StatusCmd)
+		}
+	}
+
+	return r0
+}
+
 // SetNX provides a mock function with given fields: ctx, key, value, expiration
 func (_m *Store) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.BoolCmd {
 	ret := _m.Called(ctx, key, value, expiration)

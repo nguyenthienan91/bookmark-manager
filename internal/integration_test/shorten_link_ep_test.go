@@ -82,7 +82,7 @@ func TestShortenLinkEndpoint(t *testing.T) {
 			apiEngine := api.NewEngine(&api.Config{
 				ServiceName: "bookmark_service",
 				InstanceID:  "test-instance-id",
-			}, mockSvc)
+			}, svcmocks.NewHealthCheck(t), mockSvc)
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/links/shorten",
 				bytes.NewBufferString(tc.requestBody))

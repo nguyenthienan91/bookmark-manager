@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	model "github.com/nguyenthienan91/bookmark-manager/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,22 +14,32 @@ type HealthCheck struct {
 	mock.Mock
 }
 
-// Check provides a mock function with no fields
-func (_m *HealthCheck) Check() model.HealthCheckResponse {
-	ret := _m.Called()
+// Check provides a mock function with given fields: ctx
+func (_m *HealthCheck) Check(ctx context.Context) (model.HealthCheckResponse, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Check")
 	}
 
 	var r0 model.HealthCheckResponse
-	if rf, ok := ret.Get(0).(func() model.HealthCheckResponse); ok {
-		r0 = rf()
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (model.HealthCheckResponse, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) model.HealthCheckResponse); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(model.HealthCheckResponse)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewHealthCheck creates a new instance of HealthCheck. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
