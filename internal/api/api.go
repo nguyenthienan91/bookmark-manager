@@ -24,12 +24,12 @@ type engine struct {
 }
 
 // NewEngine creates a new Gin engine with all application routes registered.
-func NewEngine(cfg *Config, shortenLinkSvc service.ShortenLink) Engine {
+func NewEngine(cfg *Config, healthCheckSvc service.HealthCheck, shortenLinkSvc service.ShortenLink) Engine {
 	app := &engine{
 		app: gin.Default(),
 		cfg: cfg,
 	}
-	app.initRoutes(shortenLinkSvc)
+	app.initRoutes(healthCheckSvc, shortenLinkSvc)
 	return app
 }
 
@@ -42,14 +42,13 @@ func (e *engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	e.app.ServeHTTP(w, req)
 }
 
-func (e *engine) initRoutes(shortenLinkSvc service.ShortenLink) {
+func (e *engine) initRoutes(healthCheckSvc service.HealthCheck, shortenLinkSvc service.ShortenLink) {
 	// Password generation
 	genPassService := service.NewGenPass()
 	genPassHandler := handler.NewGenPass(genPassService)
 
 	// Health check
-	healthCheckService := service.NewHealthCheck(e.cfg.ServiceName, e.cfg.InstanceID)
-	healthCheckHandler := handler.NewHealthCheck(healthCheckService)
+	healthCheckHandler := handler.NewHealthCheck(healthCheckSvc)
 
 	e.app.GET("/generate-password", genPassHandler.GeneratePassword)
 	e.app.GET("/health-check", healthCheckHandler.HealthCheck)

@@ -35,7 +35,11 @@ func TestGenPassEndpoint(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			apiEngine := api.NewEngine(&api.Config{}, svcmocks.NewShortenLink(t))
+			apiEngine := api.NewEngine(
+				&api.Config{},
+				svcmocks.NewHealthCheck(t),
+				svcmocks.NewShortenLink(t),
+			)
 			responseRecorder := tc.setupTestHTTP(apiEngine)
 
 			assert.Equal(t, tc.expectedStatusCode, responseRecorder.Code)

@@ -43,7 +43,7 @@ const docTemplate = `{
         },
         "/health-check": {
             "get": {
-                "description": "Check if the service is running and return service information",
+                "description": "Check if the service is running and Redis is reachable",
                 "produces": [
                     "application/json"
                 ],
@@ -56,6 +56,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.HealthCheckResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     }
                 }
