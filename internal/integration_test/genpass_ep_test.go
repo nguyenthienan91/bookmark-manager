@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nguyenthienan91/bookmark-manager/internal/api"
+	svcmocks "github.com/nguyenthienan91/bookmark-manager/internal/service/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +35,7 @@ func TestGenPassEndpoint(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			apiEngine := api.NewEngine(&api.Config{})
+			apiEngine := api.NewEngine(&api.Config{}, svcmocks.NewShortenLink(t))
 			responseRecorder := tc.setupTestHTTP(apiEngine)
 
 			assert.Equal(t, tc.expectedStatusCode, responseRecorder.Code)

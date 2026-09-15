@@ -23,18 +23,13 @@ type engine struct {
 	cfg *Config
 }
 
-// NewEngine creates a new Gin engine.
-// shortenLinkSvc is optional; pass nil to disable the /v1/links/shorten route (e.g. in existing integration tests).
-func NewEngine(cfg *Config, shortenLinkSvc ...service.ShortenLink) Engine {
-	var svc service.ShortenLink
-	if len(shortenLinkSvc) > 0 {
-		svc = shortenLinkSvc[0]
-	}
+// NewEngine creates a new Gin engine with all application routes registered.
+func NewEngine(cfg *Config, shortenLinkSvc service.ShortenLink) Engine {
 	app := &engine{
 		app: gin.Default(),
 		cfg: cfg,
 	}
-	app.initRoutes(svc)
+	app.initRoutes(shortenLinkSvc)
 	return app
 }
 
@@ -59,14 +54,11 @@ func (e *engine) initRoutes(shortenLinkSvc service.ShortenLink) {
 	e.app.GET("/generate-password", genPassHandler.GeneratePassword)
 	e.app.GET("/health-check", healthCheckHandler.HealthCheck)
 
-	// Shorten link (only registered when a real service is wired in)
-	if shortenLinkSvc != nil {
-		shortenLinkHandler := handler.NewShortenLink(shortenLinkSvc)
-		v1 := e.app.Group("/v1")
-		v1.POST("/links/shorten", shortenLinkHandler.ShortenLink)
-	}
+	// Shorten link
+	shortenLinkHandler := handler.NewShortenLink(shortenLinkSvc)
+	v1 := e.app.Group("/v1")
+	v1.POST("/links/shorten", shortenLinkHandler.ShortenLink)
 
 	// Swagger docs
 	e.app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
-

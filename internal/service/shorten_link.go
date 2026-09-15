@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	shortCodeLength  = 7
-	shortCodeCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	maxRetryCount    = 10
+	shortCodeLength    = 7
+	shortCodeCharset   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	shortCodeKeyPrefix = "shorturl:"
+	maxRetryCount      = 10
 )
 
 // ShortenLink is the service interface for URL shortening.
@@ -46,7 +47,8 @@ func (s *shortenLinkService) Shorten(ctx context.Context, url string, expSeconds
 			return "", err
 		}
 
-		created, err := s.repo.SaveLink(ctx, code, url, exp)
+		key := fmt.Sprintf("%s%s", shortCodeKeyPrefix, code)
+		created, err := s.repo.SaveLink(ctx, key, url, exp)
 		if err != nil {
 			return "", err
 		}

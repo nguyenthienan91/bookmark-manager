@@ -7,6 +7,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	redis "github.com/redis/go-redis/v9"
+
 	time "time"
 )
 
@@ -16,31 +18,23 @@ type Store struct {
 }
 
 // SetNX provides a mock function with given fields: ctx, key, value, expiration
-func (_m *Store) SetNX(ctx context.Context, key string, value string, expiration time.Duration) (bool, error) {
+func (_m *Store) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.BoolCmd {
 	ret := _m.Called(ctx, key, value, expiration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SetNX")
 	}
 
-	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, time.Duration) (bool, error)); ok {
-		return rf(ctx, key, value, expiration)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, time.Duration) bool); ok {
+	var r0 *redis.BoolCmd
+	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}, time.Duration) *redis.BoolCmd); ok {
 		r0 = rf(ctx, key, value, expiration)
 	} else {
-		r0 = ret.Get(0).(bool)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*redis.BoolCmd)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, time.Duration) error); ok {
-		r1 = rf(ctx, key, value, expiration)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // NewStore creates a new instance of Store. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

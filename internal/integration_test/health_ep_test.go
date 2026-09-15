@@ -6,16 +6,18 @@ import (
 	"testing"
 
 	"github.com/nguyenthienan91/bookmark-manager/internal/api"
+	svcmocks "github.com/nguyenthienan91/bookmark-manager/internal/service/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHealthCheckEndpoint(t *testing.T) {
 	t.Parallel()
 
+	shortenSvc := svcmocks.NewShortenLink(t)
 	apiEngine := api.NewEngine(&api.Config{
 		ServiceName: "bookmark_service",
 		InstanceID:  "test-instance-id",
-	})
+	}, shortenSvc)
 
 	req := httptest.NewRequest(http.MethodGet, "/health-check", nil)
 	rec := httptest.NewRecorder()

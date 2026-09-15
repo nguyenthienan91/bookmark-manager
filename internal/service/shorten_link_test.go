@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,6 +13,26 @@ import (
 )
 
 var errRepo = errors.New("repository error")
+
+func shortCodeKeyMatcher() interface{} {
+	return mock.MatchedBy(func(key string) bool {
+		if !strings.HasPrefix(key, shortCodeKeyPrefix) {
+			return false
+		}
+
+		code := strings.TrimPrefix(key, shortCodeKeyPrefix)
+		if len(code) != shortCodeLength {
+			return false
+		}
+
+		for _, ch := range code {
+			if !strings.ContainsRune(shortCodeCharset, ch) {
+				return false
+			}
+		}
+		return true
+	})
+}
 
 func TestShortenLinkService_Shorten(t *testing.T) {
 	t.Parallel()
@@ -32,7 +53,7 @@ func TestShortenLinkService_Shorten(t *testing.T) {
 			expSeconds: 0,
 			setupMock: func(t *testing.T) *repomocks.LinkRepository {
 				m := repomocks.NewLinkRepository(t)
-				m.On("SaveLink", context.Background(), mock.AnythingOfType("string"), testURL, time.Duration(0)).
+				m.On("SaveLink", context.Background(), shortCodeKeyMatcher(), testURL, time.Duration(0)).
 					Return(true, nil)
 				return m
 			},
@@ -47,7 +68,7 @@ func TestShortenLinkService_Shorten(t *testing.T) {
 			expSeconds: 0,
 			setupMock: func(t *testing.T) *repomocks.LinkRepository {
 				m := repomocks.NewLinkRepository(t)
-				m.On("SaveLink", context.Background(), mock.AnythingOfType("string"), testURL, time.Duration(0)).
+				m.On("SaveLink", context.Background(), shortCodeKeyMatcher(), testURL, time.Duration(0)).
 					Return(true, nil)
 				return m
 			},
@@ -67,7 +88,7 @@ func TestShortenLinkService_Shorten(t *testing.T) {
 			expSeconds: 604800, // 7 days
 			setupMock: func(t *testing.T) *repomocks.LinkRepository {
 				m := repomocks.NewLinkRepository(t)
-				m.On("SaveLink", context.Background(), mock.AnythingOfType("string"), testURL, 604800*time.Second).
+				m.On("SaveLink", context.Background(), shortCodeKeyMatcher(), testURL, 604800*time.Second).
 					Return(true, nil)
 				return m
 			},
@@ -80,7 +101,7 @@ func TestShortenLinkService_Shorten(t *testing.T) {
 			expSeconds: 0,
 			setupMock: func(t *testing.T) *repomocks.LinkRepository {
 				m := repomocks.NewLinkRepository(t)
-				m.On("SaveLink", context.Background(), mock.AnythingOfType("string"), testURL, time.Duration(0)).
+				m.On("SaveLink", context.Background(), shortCodeKeyMatcher(), testURL, time.Duration(0)).
 					Return(true, nil)
 				return m
 			},
@@ -93,7 +114,7 @@ func TestShortenLinkService_Shorten(t *testing.T) {
 			expSeconds: 0,
 			setupMock: func(t *testing.T) *repomocks.LinkRepository {
 				m := repomocks.NewLinkRepository(t)
-				m.On("SaveLink", context.Background(), mock.AnythingOfType("string"), testURL, time.Duration(0)).
+				m.On("SaveLink", context.Background(), shortCodeKeyMatcher(), testURL, time.Duration(0)).
 					Return(false, errRepo)
 				return m
 			},
@@ -107,9 +128,9 @@ func TestShortenLinkService_Shorten(t *testing.T) {
 			setupMock: func(t *testing.T) *repomocks.LinkRepository {
 				m := repomocks.NewLinkRepository(t)
 				// first call: collision; second call: success
-				m.On("SaveLink", context.Background(), mock.AnythingOfType("string"), testURL, time.Duration(0)).
+				m.On("SaveLink", context.Background(), shortCodeKeyMatcher(), testURL, time.Duration(0)).
 					Return(false, nil).Once()
-				m.On("SaveLink", context.Background(), mock.AnythingOfType("string"), testURL, time.Duration(0)).
+				m.On("SaveLink", context.Background(), shortCodeKeyMatcher(), testURL, time.Duration(0)).
 					Return(true, nil).Once()
 				return m
 			},
@@ -123,7 +144,7 @@ func TestShortenLinkService_Shorten(t *testing.T) {
 			setupMock: func(t *testing.T) *repomocks.LinkRepository {
 				m := repomocks.NewLinkRepository(t)
 				// all maxRetryCount attempts return collision
-				m.On("SaveLink", context.Background(), mock.AnythingOfType("string"), testURL, time.Duration(0)).
+				m.On("SaveLink", context.Background(), shortCodeKeyMatcher(), testURL, time.Duration(0)).
 					Return(false, nil).Times(maxRetryCount)
 				return m
 			},
