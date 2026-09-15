@@ -1,0 +1,353 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>api: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/nguyenthienan91/bookmark-manager/internal/api/api.go (91.7%)</option>
+				
+				<option value="file1">github.com/nguyenthienan91/bookmark-manager/internal/api/config.go (0.0%)</option>
+				
+				<option value="file2">github.com/nguyenthienan91/bookmark-manager/internal/handler/genpass.go (100.0%)</option>
+				
+				<option value="file3">github.com/nguyenthienan91/bookmark-manager/internal/handler/health.go (100.0%)</option>
+				
+				<option value="file4">github.com/nguyenthienan91/bookmark-manager/internal/service/genpass.go (87.5%)</option>
+				
+				<option value="file5">github.com/nguyenthienan91/bookmark-manager/internal/service/health.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package api
+
+import (
+        "fmt"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+        "github.com/nguyenthienan91/bookmark-manager/internal/handler"
+        "github.com/nguyenthienan91/bookmark-manager/internal/service"
+        swaggerFiles "github.com/swaggo/files"
+        ginSwagger "github.com/swaggo/gin-swagger"
+        
+        _ "github.com/nguyenthienan91/bookmark-manager/docs"
+)
+
+type Engine interface {
+        Start() error
+        ServeHTTP(w http.ResponseWriter, req *http.Request)
+}
+
+
+type engine struct {
+        app *gin.Engine
+        cfg *Config
+}
+
+func NewEngine(cfg *Config) Engine <span class="cov10" title="2">{
+        app := &amp;engine{
+                app: gin.Default(),
+                cfg: cfg,
+        }
+        app.initRoutes()         
+        return app
+        }</span>
+
+func (e *engine) Start() error <span class="cov0" title="0">{
+        return e.app.Run(fmt.Sprintf(":%s", e.cfg.AppPort))
+}</span>
+
+// ServeHTTp to test the API without starting the server
+func (e *engine) ServeHTTP(w http.ResponseWriter, req *http.Request) <span class="cov10" title="2">{
+        e.app.ServeHTTP(w, req)
+}</span>
+
+func (e *engine) initRoutes() <span class="cov10" title="2">{
+
+        // Register the password generation route
+        genPassService := service.NewGenPass()
+        genPassHandler := handler.NewGenPass(genPassService)
+
+        // Register the health check route
+        healthCheckService := service.NewHealthCheck(e.cfg.ServiceName, e.cfg.InstanceID)
+        healthCheckHandler := handler.NewHealthCheck(healthCheckService)
+
+        e.app.GET("/generate-password", genPassHandler.GeneratePassword)
+        e.app.GET("/health-check", healthCheckHandler.HealthCheck)
+        
+        // Swagger documentation endpoint
+        e.app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+}</span>
+
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package api
+
+import ("github.com/kelseyhightower/envconfig"
+        "github.com/google/uuid"
+)
+
+type Config struct {
+        AppPort string `default:"8080" envconfig:"APP_PORT"`
+        ServiceName string `default:"bookmark-service" envconfig:"SERVICE_NAME"`
+        InstanceID string `envconfig:"INSTANCE_ID"`
+}
+
+func NewConfig() (*Config, error) <span class="cov0" title="0">{
+        cfg := &amp;Config{}
+        err := envconfig.Process("api", cfg)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span> 
+        <span class="cov0" title="0">if cfg.InstanceID == "" </span><span class="cov0" title="0">{
+                cfg.InstanceID = uuid.NewString()
+        }</span>         
+        <span class="cov0" title="0">return cfg, nil</span>
+}</pre>
+		
+		<pre class="file" id="file2" style="display: none">package handler
+
+import (
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+        "github.com/nguyenthienan91/bookmark-manager/internal/model"
+        "github.com/nguyenthienan91/bookmark-manager/internal/service"
+)
+
+const passwordLength = 12
+
+type GenPass interface {
+        GeneratePassword(c *gin.Context)
+}
+
+type genPassHandler struct {
+        genPassService service.GenPass
+}
+
+func NewGenPass(GenPassSvc service.GenPass) GenPass <span class="cov10" title="4">{
+        return &amp;genPassHandler{
+                genPassService: GenPassSvc,
+        }
+}</span>
+
+// GeneratePassword godoc
+// @Summary      Generate a random password
+// @Description  Generate a secure random password with 12 characters
+// @Tags         Password
+// @Produce      json
+// @Success      200  {object}  model.GeneratePasswordResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /generate-password [get]
+func (g *genPassHandler) GeneratePassword(c *gin.Context) <span class="cov8" title="3">{
+        pass, err := g.genPassService.GeneratePassword(passwordLength)
+        if err != nil </span><span class="cov1" title="1">{
+                c.JSON(http.StatusInternalServerError, model.ErrorResponse{Error: "Failed to generate password"})
+                return
+        }</span>
+        <span class="cov5" title="2">c.JSON(http.StatusOK, model.GeneratePasswordResponse{Password: pass})</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package handler
+
+import (
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+        "github.com/nguyenthienan91/bookmark-manager/internal/service"
+)
+
+type HealthCheck interface {
+        HealthCheck(c *gin.Context)
+}
+
+type healthCheckHandler struct {
+        healthCheckService service.HealthCheck
+}
+
+func NewHealthCheck(healthCheckSvc service.HealthCheck) HealthCheck <span class="cov10" title="3">{
+        return &amp;healthCheckHandler{
+                healthCheckService: healthCheckSvc,
+        }
+}</span>
+
+// HealthCheck godoc
+// @Summary      Health check endpoint
+// @Description  Check if the service is running and return service information
+// @Tags         Health
+// @Produce      json
+// @Success      200  {object}  model.HealthCheckResponse
+// @Router       /health-check [get]
+func (h *healthCheckHandler) HealthCheck(c *gin.Context) <span class="cov6" title="2">{
+        response := h.healthCheckService.Check()
+
+        c.JSON(http.StatusOK, response)
+}</pre>
+		
+		<pre class="file" id="file4" style="display: none">package service
+
+import (
+        "crypto/rand"
+        "math/big"
+)
+
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&amp;*()-_=+[]{}|;:,.&lt;&gt;?"
+// GenPass is an interface that defines the method for generating a password.
+//go:generate mockery --name GenPass --filename=genpass.go
+type GenPass interface {
+        GeneratePassword(length int) (string, error)
+}
+
+type genPassService struct {
+}
+
+func NewGenPass() GenPass <span class="cov2" title="5">{
+        return &amp;genPassService{}
+}</span>
+
+func (g *genPassService) GeneratePassword(length int) (string, error) <span class="cov2" title="4">{
+        password := make([]byte, length)
+
+        for i := 0; i &lt; length; i++ </span><span class="cov10" title="100025">{
+                n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+
+                if err != nil </span><span class="cov0" title="0">{
+                        return "", err
+                }</span>
+
+                <span class="cov10" title="100025">password[i] = charset[n.Int64()]</span>
+
+        }
+        <span class="cov2" title="4">return string(password), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package service
+
+import "github.com/nguyenthienan91/bookmark-manager/internal/model"
+
+type HealthCheck interface {
+        Check() model.HealthCheckResponse
+}
+
+type healthCheckService struct {
+        serviceName string
+        instanceID  string
+}
+
+func NewHealthCheck(serviceName string, instanceID string) HealthCheck <span class="cov10" title="3">{
+        return &amp;healthCheckService{
+                serviceName: serviceName,
+                instanceID:  instanceID,
+        }
+}</span>
+
+func (h *healthCheckService) Check() model.HealthCheckResponse <span class="cov6" title="2">{
+        return model.HealthCheckResponse{
+                Message:     "OK",
+                ServiceName: h.serviceName,
+                InstanceID:  h.instanceID,
+        }
+}</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

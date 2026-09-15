@@ -469,9 +469,153 @@ gofmt -w internal/api/config.go internal/api/api.go internal/model/health.go int
 - [x] Viết handler test.
 - [x] Viết integration test.
 
-## Lecture 02
+## Lecture 02 - Shorten URL Endpoint
 
-Chưa học.
+### Ngày thực hiện
+
+`11/09/2026`
+
+### Mục tiêu bài tập
+
+Tạo endpoint:
+
+```http
+POST /v1/links/shorten
+```
+
+Endpoint nhận một URL, sinh một mã rút gọn ngẫu nhiên gồm 7 ký tự, sau đó lưu mapping:
+
+```text
+short code -> original URL
+```
+
+Mapping được lưu trong Redis.
+
+Request mẫu:
+
+```json
+{
+  "exp": 604800,
+  "url": "https://example.com/article"
+}
+```
+
+Response thành công:
+
+```json
+{
+  "code": "abc1234",
+  "message": "Shorten URL generated successfully!"
+}
+```
+
+### Những phần đã triển khai
+
+- [x] Thêm dependency Redis bằng `go get github.com/redis/go-redis/v9`.
+- [x] Tạo Redis config trong `pkg/redis/config.go`.
+- [x] Tạo Redis client trong `pkg/redis/client.go`.
+- [x] Tạo interface `Store` trong `pkg/redis/store.go`.
+- [x] Cấu hình Redis bằng các biến môi trường:
+  - `REDIS_ADDR`
+  - `REDIS_PASSWORD`
+  - `REDIS_DB`
+- [x] Tạo interface và implementation cho repository trong `internal/repository`.
+- [x] Dùng `SetNX` để chỉ lưu code nếu key chưa tồn tại, tránh ghi đè URL cũ.
+- [x] Dùng prefix `shorturl:` cho key trong Redis.
+- [x] Tạo request/response model trong `internal/model/shorten_link.go`.
+- [x] Validate `url` bắt buộc và phải có format URL hợp lệ.
+- [x] Reject `exp` âm với HTTP `400`.
+- [x] Sinh short code dài đúng 7 ký tự.
+- [x] Short code chỉ dùng chữ cái và chữ số.
+- [x] Dùng `crypto/rand` để sinh code ngẫu nhiên.
+- [x] Chuyển `exp` từ giây sang `time.Duration`.
+- [x] Quy ước `exp = 0` là không đặt TTL.
+- [x] Retry khi short code bị trùng, tối đa 10 lần.
+- [x] Tạo handler cho endpoint `POST /v1/links/shorten`.
+- [x] Đăng ký route trong group `/v1`.
+- [x] Inject service vào API engine để endpoint dễ test.
+- [x] Load Redis config, tạo client, ping Redis và đóng client trong `cmd/api/main.go`.
+- [x] Regenerate mock bằng Mockery cho Redis store, repository, service và health-check service.
+- [x] Tạo repository unit test.
+- [x] Tạo service unit test.
+- [x] Tạo handler unit test.
+- [x] Tạo integration test cho endpoint.
+- [x] Cập nhật Swagger documentation cho endpoint mới.
+
+### Luồng xử lý
+
+```text
+HTTP POST request
+    -> Gin router
+    -> handler.ShortenLink
+    -> validate request
+    -> service.Shorten
+    -> generate 7-character code
+    -> repository.SaveLink
+    -> Redis Store.SetNX
+    -> return code and success message
+```
+
+### Phân chia trách nhiệm
+
+#### `internal/model`
+
+Chứa struct request và response của endpoint.
+
+#### `internal/handler`
+
+- Đọc JSON request.
+- Validate dữ liệu đầu vào.
+- Gọi service.
+- Trả HTTP status code và JSON response.
+
+Handler không tự sinh code và không gọi trực tiếp Redis.
+
+#### `internal/service`
+
+- Sinh short code.
+- Chỉ sử dụng ký tự chữ và số.
+- Chuyển expiration từ giây sang duration.
+- Retry khi code bị collision.
+- Gọi repository để lưu dữ liệu.
+
+#### `internal/repository`
+
+- Tạo Redis key từ prefix `shorturl:` và short code.
+- Gọi `SetNX`.
+- Trả về trạng thái lưu thành công hoặc key đã tồn tại.
+
+#### `pkg/redis`
+
+- Quản lý cấu hình và kết nối Redis.
+- Cung cấp interface nhỏ `Store` để repository dễ mock.
+- Thực hiện `Ping`, `Close` và `SetNX`.
+
+### Các trường hợp đã test
+
+- Request hợp lệ có expiration.
+- Request hợp lệ không có expiration.
+- Thiếu URL.
+- JSON không hợp lệ.
+- URL không đúng format.
+- `exp` là số âm.
+- Service trả lỗi.
+- Redis trả lỗi.
+- Redis key đã tồn tại.
+- Redis key có đúng prefix.
+- Expiration được truyền đúng.
+- Short code có đúng 7 ký tự.
+- Short code chỉ chứa chữ và số.
+- Retry thành công sau một lần collision.
+- Retry thất bại sau đủ 10 lần.
+
+### Bài học rút ra
+
+- Interface giúp tách business logic khỏi implementation cụ thể và giúp viết unit test bằng mock.
+- `SetNX` phù hợp hơn `Set` khi short code phải unique, vì không ghi đè dữ liệu đang tồn tại.
+- `exp` từ request là số giây, còn Redis client nhận `time.Duration`, nên phải chuyển đổi rõ ràng.
+- Integration test có thể inject mock service để kiểm tra route mà không cần kết nối Redis thật.
+- Dependency runtime như `go-redis` dùng `go get`; tool sinh mock như Mockery cài bằng `go install`.
 
 ## Lecture 03
 

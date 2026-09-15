@@ -21,6 +21,13 @@ func NewHealthCheck(healthCheckSvc service.HealthCheck) HealthCheck {
 	}
 }
 
+// HealthCheck godoc
+// @Summary      Health check endpoint
+// @Description  Check if the service is running and return service information
+// @Tags         Health
+// @Produce      json
+// @Success      200  {object}  model.HealthCheckResponse
+// @Router       /health-check [get]
 func (h *healthCheckHandler) HealthCheck(c *gin.Context) {
 	response := h.healthCheckService.Check()
 

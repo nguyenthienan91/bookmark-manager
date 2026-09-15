@@ -7,34 +7,53 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nguyenthienan91/bookmark-manager/internal/model"
+	"github.com/nguyenthienan91/bookmark-manager/internal/service/mocks"
 	"github.com/stretchr/testify/assert"
 )
-
-type fakeHealthCheckService struct{}
-
-func (f *fakeHealthCheckService) Check() model.HealthCheckResponse {
-	return model.HealthCheckResponse{
-		Message:     "OK",
-		ServiceName: "bookmark_service",
-		InstanceID:  "test-instance-id",
-	}
-}
 
 func TestHealthCheckHandler_HealthCheck(t *testing.T) {
 	t.Parallel()
 
-	rec := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(rec)
-	ctx.Request = httptest.NewRequest(http.MethodGet, "/health-check", nil)
+	testCases := []struct {
+		name                 string
+		setupMockService     func(t *testing.T) *mocks.HealthCheck
+		expectedStatusCode   int
+		expectedResponseBody string
+	}{
+		{
+			name: "success",
+			setupMockService: func(t *testing.T) *mocks.HealthCheck {
+				mockSvc := mocks.NewHealthCheck(t)
+				mockSvc.On("Check").Return(model.HealthCheckResponse{
+					Message:     "OK",
+					ServiceName: "bookmark_service",
+					InstanceID:  "test-instance-id",
+				})
+				return mockSvc
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedResponseBody: `{
+				"message": "OK",
+				"service_name": "bookmark_service",
+				"instance_id": "test-instance-id"
+			}`,
+		},
+	}
 
-	handler := NewHealthCheck(&fakeHealthCheckService{})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-	handler.HealthCheck(ctx)
+			rec := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(rec)
+			ctx.Request = httptest.NewRequest(http.MethodGet, "/health-check", nil)
 
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.JSONEq(t, `{
-		"message": "OK",
-		"service_name": "bookmark_service",
-		"instance_id": "test-instance-id"
-	}`, rec.Body.String())
+			mockSvc := tc.setupMockService(t)
+			h := NewHealthCheck(mockSvc)
+			h.HealthCheck(ctx)
+
+			assert.Equal(t, tc.expectedStatusCode, rec.Code)
+			assert.JSONEq(t, tc.expectedResponseBody, rec.Body.String())
+		})
+	}
 }
