@@ -7,25 +7,31 @@ import (
 	"time"
 
 	redismocks "github.com/nguyenthienan91/bookmark-manager/pkg/redis/mocks"
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	testKey = "shorturl:abc1234"
+	testURL = "https://example.com"
 )
 
 var errRedis = errors.New("redis error")
 
+func newBoolCommand(ctx context.Context, value bool, err error) *goredis.BoolCmd {
+	cmd := goredis.NewBoolCmd(ctx)
+	cmd.SetVal(value)
+	cmd.SetErr(err)
+	return cmd
+}
+
 func TestLinkRepository_SaveLink(t *testing.T) {
 	t.Parallel()
-
-	const (
-		testCode = "abc1234"
-		testURL  = "https://example.com"
-		testKey  = "shorturl:" + testCode
-	)
-	testExp := 7 * 24 * time.Hour
 
 	testCases := []struct {
 		name            string
 		setupMock       func(t *testing.T) *redismocks.Store
-		code            string
+		key             string
 		url             string
 		expiration      time.Duration
 		expectedCreated bool
@@ -35,81 +41,88 @@ func TestLinkRepository_SaveLink(t *testing.T) {
 			name: "save successfully",
 			setupMock: func(t *testing.T) *redismocks.Store {
 				m := redismocks.NewStore(t)
-				m.On("SetNX", context.Background(), testKey, testURL, testExp).Return(true, nil)
+				m.On("SetNX", context.Background(), testKey, testURL, 7*24*time.Hour).
+					Return(newBoolCommand(context.Background(), true, nil))
 				return m
 			},
-			code:            testCode,
+			key:             testKey,
 			url:             testURL,
-			expiration:      testExp,
+			expiration:      7 * 24 * time.Hour,
 			expectedCreated: true,
-			expectedErr:     nil,
 		},
 		{
 			name: "key already exists",
 			setupMock: func(t *testing.T) *redismocks.Store {
 				m := redismocks.NewStore(t)
-				m.On("SetNX", context.Background(), testKey, testURL, testExp).Return(false, nil)
+				m.On("SetNX", context.Background(), testKey, testURL, 7*24*time.Hour).
+					Return(newBoolCommand(context.Background(), false, nil))
 				return m
 			},
-			code:            testCode,
+			key:             testKey,
 			url:             testURL,
-			expiration:      testExp,
+			expiration:      7 * 24 * time.Hour,
 			expectedCreated: false,
-			expectedErr:     nil,
 		},
 		{
 			name: "redis error",
 			setupMock: func(t *testing.T) *redismocks.Store {
 				m := redismocks.NewStore(t)
-				m.On("SetNX", context.Background(), testKey, testURL, testExp).Return(false, errRedis)
+				m.On("SetNX", context.Background(), testKey, testURL, 7*24*time.Hour).
+					Return(newBoolCommand(context.Background(), false, errRedis))
 				return m
 			},
-			code:            testCode,
-			url:             testURL,
-			expiration:      testExp,
-			expectedCreated: false,
-			expectedErr:     errRedis,
+			key:         testKey,
+			url:         testURL,
+			expiration:  7 * 24 * time.Hour,
+			expectedErr: errRedis,
 		},
 		{
-			name: "key has correct prefix",
+			name: "uses the provided key",
 			setupMock: func(t *testing.T) *redismocks.Store {
 				m := redismocks.NewStore(t)
-				// assert the key passed to Redis includes the shorturl: prefix
-				m.On("SetNX", context.Background(), "shorturl:"+testCode, testURL, time.Duration(0)).Return(true, nil)
+				m.On("SetNX", context.Background(), "custom:key", testURL, time.Duration(0)).
+					Return(newBoolCommand(context.Background(), true, nil))
 				return m
 			},
-			code:            testCode,
+			key:             "custom:key",
 			url:             testURL,
-			expiration:      0,
 			expectedCreated: true,
-			expectedErr:     nil,
 		},
 		{
-			name: "expiration passed correctly",
+			name: "passes expiration correctly",
 			setupMock: func(t *testing.T) *redismocks.Store {
 				m := redismocks.NewStore(t)
-				m.On("SetNX", context.Background(), testKey, testURL, 30*time.Second).Return(true, nil)
+				m.On("SetNX", context.Background(), testKey, testURL, 30*time.Second).
+					Return(newBoolCommand(context.Background(), true, nil))
 				return m
 			},
-			code:            testCode,
+			key:             testKey,
 			url:             testURL,
 			expiration:      30 * time.Second,
 			expectedCreated: true,
-			expectedErr:     nil,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			mockStore := tc.setupMock(t)
-			repo := NewLinkRepository(mockStore)
 
-			created, err := repo.SaveLink(context.Background(), tc.code, tc.url, tc.expiration)
+			store := tc.setupMock(t)
+			repo := NewLinkRepository(store)
 
-			assert.ErrorIs(t, err, tc.expectedErr)
+			created, err := repo.SaveLink(
+				context.Background(),
+				tc.key,
+				tc.url,
+				tc.expiration,
+			)
+
 			assert.Equal(t, tc.expectedCreated, created)
+			if tc.expectedErr != nil {
+				assert.ErrorIs(t, err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
 		})
 	}
 }
-

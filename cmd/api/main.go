@@ -8,6 +8,7 @@ import (
 	"github.com/nguyenthienan91/bookmark-manager/internal/repository"
 	"github.com/nguyenthienan91/bookmark-manager/internal/service"
 	pkgredis "github.com/nguyenthienan91/bookmark-manager/pkg/redis"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 // @title           Bookmark Manager API
@@ -29,10 +30,11 @@ func main() {
 	}
 
 	// 3. Create Redis client
-	redisClient, err := pkgredis.NewClient(redisCfg)
-	if err != nil {
-		panic(err)
-	}
+	redisClient := goredis.NewClient(&goredis.Options{
+		Addr:     redisCfg.Addr,
+		Password: redisCfg.Password,
+		DB:       redisCfg.DB,
+	})
 	defer func() {
 		if err := redisClient.Close(); err != nil {
 			log.Printf("error closing redis client: %v", err)
@@ -40,7 +42,7 @@ func main() {
 	}()
 
 	// 4. Ping Redis
-	if err := redisClient.Ping(context.Background()); err != nil {
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
 		panic("cannot connect to Redis: " + err.Error())
 	}
 

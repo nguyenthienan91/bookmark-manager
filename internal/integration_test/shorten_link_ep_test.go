@@ -98,4 +98,3 @@ func TestShortenLinkEndpoint(t *testing.T) {
 		})
 	}
 }
-
