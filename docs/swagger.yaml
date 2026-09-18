@@ -75,6 +75,33 @@ paths:
       summary: Health check endpoint
       tags:
       - Health
+  /v1/links/redirect/{code}:
+    get:
+      description: Redirect to the original URL for the given short code
+      parameters:
+      - description: Shorten code
+        in: path
+        name: code
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Redirect short link
+      tags:
+      - Links
   /v1/links/shorten:
     post:
       consumes:

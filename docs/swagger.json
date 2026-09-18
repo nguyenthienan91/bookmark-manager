@@ -60,6 +60,47 @@
                 }
             }
         },
+        "/v1/links/redirect/{code}": {
+            "get": {
+                "description": "Redirect to the original URL for the given short code",
+                "tags": [
+                    "Links"
+                ],
+                "summary": "Redirect short link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shorten code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Found"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/links/shorten": {
             "post": {
                 "description": "Generate a 7-character alphanumeric short code for the given URL",

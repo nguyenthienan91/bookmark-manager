@@ -6,12 +6,17 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/nguyenthienan91/bookmark-manager/internal/api"
+	"github.com/nguyenthienan91/bookmark-manager/internal/service"
 	svcmocks "github.com/nguyenthienan91/bookmark-manager/internal/service/mocks"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
+
+var testLogger = zerolog.New(os.Stdout)
 
 func TestShortenLinkEndpoint(t *testing.T) {
 	t.Parallel()
@@ -82,7 +87,7 @@ func TestShortenLinkEndpoint(t *testing.T) {
 			apiEngine := api.NewEngine(&api.Config{
 				ServiceName: "bookmark_service",
 				InstanceID:  "test-instance-id",
-			}, svcmocks.NewHealthCheck(t), mockSvc)
+			}, svcmocks.NewHealthCheck(t), mockSvc, testLogger)
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/links/shorten",
 				bytes.NewBufferString(tc.requestBody))
@@ -98,3 +103,79 @@ func TestShortenLinkEndpoint(t *testing.T) {
 		})
 	}
 }
+
+func TestRedirectLinkEndpoint(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name                 string
+		code                 string
+		setupMockService     func(t *testing.T) *svcmocks.ShortenLink
+		expectedStatusCode   int
+		expectedResponseBody string
+		expectedLocation     string
+	}{
+		{
+			name: "success - 302 redirect",
+			code: "abc1234",
+			setupMockService: func(t *testing.T) *svcmocks.ShortenLink {
+				m := svcmocks.NewShortenLink(t)
+				m.On("Resolve", context.Background(), "abc1234").
+					Return("https://example.com/article", nil)
+				return m
+			},
+			expectedStatusCode: http.StatusFound,
+			expectedLocation:   "https://example.com/article",
+		},
+		{
+			name: "not found - 404",
+			code: "missing1",
+			setupMockService: func(t *testing.T) *svcmocks.ShortenLink {
+				m := svcmocks.NewShortenLink(t)
+				m.On("Resolve", context.Background(), "missing1").
+					Return("", service.ErrLinkNotFound)
+				return m
+			},
+			expectedStatusCode:   http.StatusNotFound,
+			expectedResponseBody: `{"error":"short link not found"}`,
+		},
+		{
+			name: "internal error - 500",
+			code: "err5678",
+			setupMockService: func(t *testing.T) *svcmocks.ShortenLink {
+				m := svcmocks.NewShortenLink(t)
+				m.On("Resolve", context.Background(), "err5678").
+					Return("", errors.New("redis down"))
+				return m
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"internal server error"}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			mockSvc := tc.setupMockService(t)
+			apiEngine := api.NewEngine(&api.Config{
+				ServiceName: "bookmark_service",
+				InstanceID:  "test-instance-id",
+			}, svcmocks.NewHealthCheck(t), mockSvc, testLogger)
+
+			req := httptest.NewRequest(http.MethodGet, "/v1/links/redirect/"+tc.code, nil)
+			rec := httptest.NewRecorder()
+
+			apiEngine.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.expectedStatusCode, rec.Code)
+			if tc.expectedResponseBody != "" {
+				assert.JSONEq(t, tc.expectedResponseBody, rec.Body.String())
+			}
+			if tc.expectedLocation != "" {
+				assert.Equal(t, tc.expectedLocation, rec.Header().Get("Location"))
+			}
+		})
+	}
+}
+
