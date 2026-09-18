@@ -8,6 +8,7 @@ import (
 	"time"
 
 	repomocks "github.com/nguyenthienan91/bookmark-manager/internal/repository/mocks"
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -171,3 +172,77 @@ func TestShortenLinkService_Shorten(t *testing.T) {
 		})
 	}
 }
+
+func TestShortenLinkService_Resolve(t *testing.T) {
+	t.Parallel()
+
+	const testURL = "https://example.com/article"
+
+	testCases := []struct {
+		name        string
+		code        string
+		setupMock   func(t *testing.T) *repomocks.LinkRepository
+		expectedURL string
+		expectedErr error
+	}{
+		{
+			name: "success - resolves URL",
+			code: "abc1234",
+			setupMock: func(t *testing.T) *repomocks.LinkRepository {
+				m := repomocks.NewLinkRepository(t)
+				m.On("GetLink", context.Background(), "shorturl:abc1234").Return(testURL, nil)
+				return m
+			},
+			expectedURL: testURL,
+		},
+		{
+			name: "not found - redis.Nil becomes ErrLinkNotFound",
+			code: "missing1",
+			setupMock: func(t *testing.T) *repomocks.LinkRepository {
+				m := repomocks.NewLinkRepository(t)
+				m.On("GetLink", context.Background(), "shorturl:missing1").Return("", goredis.Nil)
+				return m
+			},
+			expectedErr: ErrLinkNotFound,
+		},
+		{
+			name: "repository error - propagated",
+			code: "err0001",
+			setupMock: func(t *testing.T) *repomocks.LinkRepository {
+				m := repomocks.NewLinkRepository(t)
+				m.On("GetLink", context.Background(), "shorturl:err0001").Return("", errRepo)
+				return m
+			},
+			expectedErr: errRepo,
+		},
+		{
+			name: "builds correct key with prefix",
+			code: "XyZ9876",
+			setupMock: func(t *testing.T) *repomocks.LinkRepository {
+				m := repomocks.NewLinkRepository(t)
+				m.On("GetLink", context.Background(), "shorturl:XyZ9876").Return(testURL, nil)
+				return m
+			},
+			expectedURL: testURL,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			mockRepo := tc.setupMock(t)
+			svc := NewShortenLink(mockRepo)
+
+			url, err := svc.Resolve(context.Background(), tc.code)
+
+			if tc.expectedErr != nil {
+				assert.ErrorIs(t, err, tc.expectedErr)
+				assert.Empty(t, url)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedURL, url)
+		})
+	}
+}
+

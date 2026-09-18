@@ -1,6 +1,9 @@
 run:
 	go run ./cmd/api/main.go
 
+build:
+	CGO_ENABLED=0 go build -o bin/api ./cmd/api
+
 swagger:
 	swag init -g ./cmd/api/main.go -o ./docs
 
@@ -11,6 +14,12 @@ test:
 	grep -vE "$(COVERAGE_EXCLUDE)" coverage.tmp > coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 
+docker-build:
+	docker build -t bookmark-manager .
+
+docker-run:
+	docker run --rm -p 8080:8080 --env-file .env bookmark-manager
+
 dev-run: swagger run
 
-.PHONY: run swagger test dev-run
+.PHONY: run build swagger test docker-build docker-run dev-run
