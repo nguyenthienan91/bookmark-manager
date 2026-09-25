@@ -2,15 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
-	"os"
 
 	"github.com/nguyenthienan91/bookmark-manager/internal/api"
+	"github.com/nguyenthienan91/bookmark-manager/internal/logger"
 	"github.com/nguyenthienan91/bookmark-manager/internal/repository"
 	"github.com/nguyenthienan91/bookmark-manager/internal/service"
 	pkgredis "github.com/nguyenthienan91/bookmark-manager/pkg/redis"
 	goredis "github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog"
 )
 
 // @title           Bookmark Manager API
@@ -25,12 +23,11 @@ func main() {
 		panic(err)
 	}
 
-	// 2. Create structured logger
-	logger := zerolog.New(os.Stdout).With().
-		Timestamp().
-		Str("service", cfg.ServiceName).
-		Str("instance_id", cfg.InstanceID).
-		Logger()
+	// 2. Initialize structured logger
+	logger.Init(logger.Config{
+		ServiceName: cfg.ServiceName,
+		InstanceID:  cfg.InstanceID,
+	})
 
 	// 3. Load Redis config
 	redisCfg, err := pkgredis.NewConfig()
@@ -46,7 +43,7 @@ func main() {
 	})
 	defer func() {
 		if err := redisClient.Close(); err != nil {
-			log.Printf("error closing redis client: %v", err)
+			logger.L().Error().Err(err).Msg("error closing redis client")
 		}
 	}()
 
@@ -64,7 +61,7 @@ func main() {
 	healthCheckSvc := service.NewHealthCheck(cfg.ServiceName, cfg.InstanceID, healthRepo)
 
 	// 8. Start HTTP server
-	app := api.NewEngine(cfg, healthCheckSvc, shortenSvc, logger)
+	app := api.NewEngine(cfg, healthCheckSvc, shortenSvc)
 	if err := app.Start(); err != nil {
 		panic(err)
 	}

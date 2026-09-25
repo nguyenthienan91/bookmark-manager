@@ -39,7 +39,6 @@ func TestGenPassEndpoint(t *testing.T) {
 				&api.Config{},
 				svcmocks.NewHealthCheck(t),
 				svcmocks.NewShortenLink(t),
-				testLogger,
 			)
 			responseRecorder := tc.setupTestHTTP(apiEngine)
 

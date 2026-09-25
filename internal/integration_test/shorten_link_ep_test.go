@@ -6,17 +6,13 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/nguyenthienan91/bookmark-manager/internal/api"
 	"github.com/nguyenthienan91/bookmark-manager/internal/service"
 	svcmocks "github.com/nguyenthienan91/bookmark-manager/internal/service/mocks"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
-
-var testLogger = zerolog.New(os.Stdout)
 
 func TestShortenLinkEndpoint(t *testing.T) {
 	t.Parallel()
@@ -87,7 +83,7 @@ func TestShortenLinkEndpoint(t *testing.T) {
 			apiEngine := api.NewEngine(&api.Config{
 				ServiceName: "bookmark_service",
 				InstanceID:  "test-instance-id",
-			}, svcmocks.NewHealthCheck(t), mockSvc, testLogger)
+			}, svcmocks.NewHealthCheck(t), mockSvc)
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/links/shorten",
 				bytes.NewBufferString(tc.requestBody))
@@ -161,7 +157,7 @@ func TestRedirectLinkEndpoint(t *testing.T) {
 			apiEngine := api.NewEngine(&api.Config{
 				ServiceName: "bookmark_service",
 				InstanceID:  "test-instance-id",
-			}, svcmocks.NewHealthCheck(t), mockSvc, testLogger)
+			}, svcmocks.NewHealthCheck(t), mockSvc)
 
 			req := httptest.NewRequest(http.MethodGet, "/v1/links/redirect/"+tc.code, nil)
 			rec := httptest.NewRecorder()
@@ -178,4 +174,3 @@ func TestRedirectLinkEndpoint(t *testing.T) {
 		})
 	}
 }
-

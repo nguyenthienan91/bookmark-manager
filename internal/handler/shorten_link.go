@@ -6,9 +6,9 @@ import (
 	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nguyenthienan91/bookmark-manager/internal/logger"
 	"github.com/nguyenthienan91/bookmark-manager/internal/model"
 	"github.com/nguyenthienan91/bookmark-manager/internal/service"
-	"github.com/rs/zerolog"
 )
 
 var validCodeRegex = regexp.MustCompile(`^[a-zA-Z0-9]{1,20}$`)
@@ -21,12 +21,11 @@ type ShortenLink interface {
 
 type shortenLinkHandler struct {
 	shortenLinkSvc service.ShortenLink
-	logger         zerolog.Logger
 }
 
 // NewShortenLink creates a new ShortenLink handler.
-func NewShortenLink(svc service.ShortenLink, logger zerolog.Logger) ShortenLink {
-	return &shortenLinkHandler{shortenLinkSvc: svc, logger: logger}
+func NewShortenLink(svc service.ShortenLink) ShortenLink {
+	return &shortenLinkHandler{shortenLinkSvc: svc}
 }
 
 // ShortenLink godoc
@@ -54,7 +53,7 @@ func (h *shortenLinkHandler) ShortenLink(c *gin.Context) {
 
 	code, err := h.shortenLinkSvc.Shorten(c.Request.Context(), req.URL, req.Exp)
 	if err != nil {
-		h.logger.Error().
+		logger.L().Error().
 			Err(err).
 			Str("url", req.URL).
 			Str("path", c.FullPath()).
@@ -92,7 +91,7 @@ func (h *shortenLinkHandler) RedirectLink(c *gin.Context) {
 			c.JSON(http.StatusNotFound, model.ErrorResponse{Error: "short link not found"})
 			return
 		}
-		h.logger.Error().
+		logger.L().Error().
 			Err(err).
 			Str("code", code).
 			Str("path", c.FullPath()).

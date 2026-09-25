@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nguyenthienan91/bookmark-manager/internal/handler"
 	"github.com/nguyenthienan91/bookmark-manager/internal/service"
-	"github.com/rs/zerolog"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -25,12 +24,12 @@ type engine struct {
 }
 
 // NewEngine creates a new Gin engine with all application routes registered.
-func NewEngine(cfg *Config, healthCheckSvc service.HealthCheck, shortenLinkSvc service.ShortenLink, logger zerolog.Logger) Engine {
+func NewEngine(cfg *Config, healthCheckSvc service.HealthCheck, shortenLinkSvc service.ShortenLink) Engine {
 	app := &engine{
 		app: gin.Default(),
 		cfg: cfg,
 	}
-	app.initRoutes(healthCheckSvc, shortenLinkSvc, logger)
+	app.initRoutes(healthCheckSvc, shortenLinkSvc)
 	return app
 }
 
@@ -43,7 +42,7 @@ func (e *engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	e.app.ServeHTTP(w, req)
 }
 
-func (e *engine) initRoutes(healthCheckSvc service.HealthCheck, shortenLinkSvc service.ShortenLink, logger zerolog.Logger) {
+func (e *engine) initRoutes(healthCheckSvc service.HealthCheck, shortenLinkSvc service.ShortenLink) {
 	// Password generation
 	genPassService := service.NewGenPass()
 	genPassHandler := handler.NewGenPass(genPassService)
@@ -55,7 +54,7 @@ func (e *engine) initRoutes(healthCheckSvc service.HealthCheck, shortenLinkSvc s
 	e.app.GET("/health-check", healthCheckHandler.HealthCheck)
 
 	// Shorten link
-	shortenLinkHandler := handler.NewShortenLink(shortenLinkSvc, logger)
+	shortenLinkHandler := handler.NewShortenLink(shortenLinkSvc)
 	v1 := e.app.Group("/v1")
 	v1.POST("/links/shorten", shortenLinkHandler.ShortenLink)
 	v1.GET("/links/redirect/:code", shortenLinkHandler.RedirectLink)

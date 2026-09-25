@@ -6,20 +6,15 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nguyenthienan91/bookmark-manager/internal/service"
 	svcmocks "github.com/nguyenthienan91/bookmark-manager/internal/service/mocks"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	errShortenSvc = errors.New("shorten service error")
-	testLogger    = zerolog.New(os.Stdout)
-)
+var errShortenSvc = errors.New("shorten service error")
 
 func TestShortenLinkHandler_ShortenLink(t *testing.T) {
 	t.Parallel()
@@ -111,7 +106,7 @@ func TestShortenLinkHandler_ShortenLink(t *testing.T) {
 			ctx.Request.Header.Set("Content-Type", "application/json")
 
 			mockSvc := tc.setupMockService(ctx.Request.Context())
-			h := NewShortenLink(mockSvc, testLogger)
+			h := NewShortenLink(mockSvc)
 			h.ShortenLink(ctx)
 
 			assert.Equal(t, tc.expectedStatusCode, rec.Code)
@@ -196,7 +191,7 @@ func TestShortenLinkHandler_RedirectLink(t *testing.T) {
 			ctx.Params = gin.Params{{Key: "code", Value: tc.code}}
 
 			mockSvc := tc.setupMockService(ctx.Request.Context())
-			h := NewShortenLink(mockSvc, testLogger)
+			h := NewShortenLink(mockSvc)
 			h.RedirectLink(ctx)
 
 			assert.Equal(t, tc.expectedStatusCode, rec.Code)
@@ -209,5 +204,3 @@ func TestShortenLinkHandler_RedirectLink(t *testing.T) {
 		})
 	}
 }
-
-
