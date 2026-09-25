@@ -65,7 +65,7 @@ func TestHealthCheckEndpoint(t *testing.T) {
 			apiEngine := api.NewEngine(&api.Config{
 				ServiceName: serviceName,
 				InstanceID:  instanceID,
-			}, healthSvc, shortenSvc, testLogger)
+			}, healthSvc, shortenSvc)
 
 			req := httptest.NewRequest(http.MethodGet, "/health-check", nil)
 			rec := httptest.NewRecorder()
