@@ -126,3 +126,75 @@ func TestLinkRepository_SaveLink(t *testing.T) {
 		})
 	}
 }
+
+func newStringCommand(ctx context.Context, value string, err error) *goredis.StringCmd {
+	cmd := goredis.NewStringCmd(ctx)
+	cmd.SetVal(value)
+	cmd.SetErr(err)
+	return cmd
+}
+
+func TestLinkRepository_GetLink(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		setupMock   func(t *testing.T) *redismocks.Store
+		key         string
+		expectedURL string
+		expectedErr error
+	}{
+		{
+			name: "success",
+			setupMock: func(t *testing.T) *redismocks.Store {
+				m := redismocks.NewStore(t)
+				m.On("Get", context.Background(), testKey).
+					Return(newStringCommand(context.Background(), testURL, nil))
+				return m
+			},
+			key:         testKey,
+			expectedURL: testURL,
+		},
+		{
+			name: "key not found - redis.Nil",
+			setupMock: func(t *testing.T) *redismocks.Store {
+				m := redismocks.NewStore(t)
+				m.On("Get", context.Background(), testKey).
+					Return(newStringCommand(context.Background(), "", goredis.Nil))
+				return m
+			},
+			key:         testKey,
+			expectedErr: goredis.Nil,
+		},
+		{
+			name: "redis error",
+			setupMock: func(t *testing.T) *redismocks.Store {
+				m := redismocks.NewStore(t)
+				m.On("Get", context.Background(), testKey).
+					Return(newStringCommand(context.Background(), "", errRedis))
+				return m
+			},
+			key:         testKey,
+			expectedErr: errRedis,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			store := tc.setupMock(t)
+			repo := NewLinkRepository(store)
+
+			url, err := repo.GetLink(context.Background(), tc.key)
+
+			if tc.expectedErr != nil {
+				assert.ErrorIs(t, err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedURL, url)
+		})
+	}
+}
+

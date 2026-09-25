@@ -3,12 +3,17 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/nguyenthienan91/bookmark-manager/internal/repository"
+	goredis "github.com/redis/go-redis/v9"
 )
+
+// ErrLinkNotFound is returned when the short code does not exist or has expired.
+var ErrLinkNotFound = errors.New("short link not found")
 
 const (
 	shortCodeLength    = 7
@@ -24,6 +29,9 @@ type ShortenLink interface {
 	// Shorten generates a unique 7-character code for the given URL.
 	// expSeconds is the TTL in seconds; 0 means no expiration.
 	Shorten(ctx context.Context, url string, expSeconds int) (string, error)
+
+	// Resolve returns the original URL for the given short code.
+	Resolve(ctx context.Context, code string) (string, error)
 }
 
 type shortenLinkService struct {
@@ -59,6 +67,19 @@ func (s *shortenLinkService) Shorten(ctx context.Context, url string, expSeconds
 	}
 
 	return "", fmt.Errorf("failed to generate a unique short code after %d retries", maxRetryCount)
+}
+
+// Resolve looks up the original URL for the given short code.
+func (s *shortenLinkService) Resolve(ctx context.Context, code string) (string, error) {
+	key := fmt.Sprintf("%s%s", shortCodeKeyPrefix, code)
+	url, err := s.repo.GetLink(ctx, key)
+	if err != nil {
+		if errors.Is(err, goredis.Nil) {
+			return "", ErrLinkNotFound
+		}
+		return "", err
+	}
+	return url, nil
 }
 
 // generateShortCode returns a cryptographically random alphanumeric string of the given length.

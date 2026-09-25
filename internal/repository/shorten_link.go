@@ -15,6 +15,10 @@ type LinkRepository interface {
 	// Returns (true, nil) when saved, (false, nil) when key already exists,
 	// and (false, err) on Redis error.
 	SaveLink(ctx context.Context, key string, url string, expiration time.Duration) (bool, error)
+
+	// GetLink retrieves the original URL stored under key.
+	// Returns ("", redis.Nil) when the key does not exist.
+	GetLink(ctx context.Context, key string) (string, error)
 }
 
 type linkRepository struct {
@@ -29,4 +33,9 @@ func NewLinkRepository(store pkgredis.Store) LinkRepository {
 // SaveLink stores a URL under key using Redis SETNX and returns whether the key was created.
 func (r *linkRepository) SaveLink(ctx context.Context, key string, url string, expiration time.Duration) (bool, error) {
 	return r.store.SetNX(ctx, key, url, expiration).Result()
+}
+
+// GetLink retrieves the original URL stored under key.
+func (r *linkRepository) GetLink(ctx context.Context, key string) (string, error) {
+	return r.store.Get(ctx, key).Result()
 }

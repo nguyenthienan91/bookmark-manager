@@ -57,6 +57,26 @@ func (_m *Store) SetNX(ctx context.Context, key string, value interface{}, expir
 	return r0
 }
 
+// Get provides a mock function with given fields: ctx, key
+func (_m *Store) Get(ctx context.Context, key string) *redis.StringCmd {
+	ret := _m.Called(ctx, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
+	var r0 *redis.StringCmd
+	if rf, ok := ret.Get(0).(func(context.Context, string) *redis.StringCmd); ok {
+		r0 = rf(ctx, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*redis.StringCmd)
+		}
+	}
+
+	return r0
+}
+
 // NewStore creates a new instance of Store. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewStore(t interface {

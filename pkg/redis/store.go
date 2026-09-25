@@ -16,4 +16,7 @@ type Store interface {
 
 	// SetNX sets key to value only if the key does not exist.
 	SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *goredis.BoolCmd
+
+	// Get retrieves the value stored at key.
+	Get(ctx context.Context, key string) *goredis.StringCmd
 }
